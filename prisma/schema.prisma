@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  listings  Listing[]
+  messages  Message[] @relation("SentMessages")
+  received  Message[] @relation("ReceivedMessages")
+  createdAt DateTime  @default(now())
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  currency    String        @default("USD")
+  status      String        @default("active")
+  sellerId    String
+  seller      User          @relation(fields: [sellerId], references: [id])
+  transactions Transaction[]
+  createdAt   DateTime      @default(now())
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  body       String
+  senderId   String
+  receiverId String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Transaction {
+  id              String  @id @default(cuid())
+  amount          Float
+  stripePaymentId String?
+  status          String  @default("pending")
+  listingId       String
+  listing         Listing @relation(fields: [listingId], references: [id])
+  buyerId         String
+  createdAt       DateTime @default(now())
+}
