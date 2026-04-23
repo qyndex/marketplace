@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,9 +19,18 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
+
+    const { error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { full_name: fullName },
+      },
     });
 
     if (authError) {
@@ -28,9 +39,45 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    // In local dev with auto-confirm, user is signed in immediately.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      // Update profile with full name
+      await supabase
+        .from("profiles")
+        .update({ full_name: fullName })
+        .eq("id", session.user.id);
+
+      router.push("/");
+      router.refresh();
+    } else {
+      setSuccess(true);
+      setLoading(false);
+    }
   };
+
+  if (success) {
+    return (
+      <main className="flex min-h-[calc(100vh-64px)] items-center justify-center">
+        <div className="max-w-sm text-center space-y-4 p-8">
+          <h1 className="text-2xl font-bold">Check your email</h1>
+          <p className="text-gray-500">
+            We sent a confirmation link to <strong>{email}</strong>. Click it to
+            activate your account.
+          </p>
+          <Link
+            href="/auth/login"
+            className="inline-block text-blue-600 hover:underline font-medium"
+          >
+            Back to Sign In
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-[calc(100vh-64px)] items-center justify-center">
@@ -38,9 +85,9 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 p-8 border rounded-lg shadow-sm"
       >
-        <h1 className="text-2xl font-bold text-center">Sign In</h1>
+        <h1 className="text-2xl font-bold text-center">Create Account</h1>
         <p className="text-sm text-gray-500 text-center">
-          Welcome back to Marketplace
+          Join the marketplace and start buying or selling
         </p>
 
         {error && (
@@ -49,6 +96,21 @@ export default function LoginPage() {
           </div>
         )}
 
+        <div>
+          <label htmlFor="full-name" className="block text-sm font-medium mb-1">
+            Full Name
+          </label>
+          <input
+            id="full-name"
+            type="text"
+            className="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Jane Doe"
+            required
+            aria-label="Full name"
+          />
+        </div>
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-1">
             Email
@@ -74,7 +136,8 @@ export default function LoginPage() {
             className="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            placeholder="At least 6 characters"
+            minLength={6}
             required
             aria-label="Password"
           />
@@ -84,21 +147,15 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? "Creating account..." : "Create Account"}
         </button>
 
         <p className="text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="text-blue-600 hover:underline font-medium">
-            Sign up
+          Already have an account?{" "}
+          <Link href="/auth/login" className="text-blue-600 hover:underline font-medium">
+            Sign in
           </Link>
         </p>
-
-        <div className="border-t pt-3">
-          <p className="text-xs text-gray-400 text-center">
-            Demo: alice@demo.local / password123
-          </p>
-        </div>
       </form>
     </main>
   );

@@ -8,6 +8,7 @@ vi.mock("next/navigation", () => ({
     replace: vi.fn(),
     prefetch: vi.fn(),
     back: vi.fn(),
+    refresh: vi.fn(),
   }),
   useSearchParams: () => new URLSearchParams(),
   usePathname: () => "/",
@@ -16,4 +17,11 @@ vi.mock("next/navigation", () => ({
 // Mock next/font/google — it performs network calls at build time
 vi.mock("next/font/google", () => ({
   Inter: () => ({ className: "inter" }),
+}));
+
+// Mock next/link — renders a plain <a> tag
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
 }));

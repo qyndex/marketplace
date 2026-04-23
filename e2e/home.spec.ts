@@ -20,6 +20,11 @@ test.describe("Marketplace home page", () => {
     ).toBeVisible();
   });
 
+  test("renders category filter pills", async ({ page }) => {
+    await expect(page.getByRole("link", { name: "All" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Electronics" })).toBeVisible();
+  });
+
   test("navigates to /search with query param when search is submitted", async ({
     page,
   }) => {
@@ -56,6 +61,13 @@ test.describe("Marketplace home page", () => {
   test("page title is set correctly", async ({ page }) => {
     await expect(page).toHaveTitle(/Marketplace/i);
   });
+
+  test("navigation bar shows Sign In and Sign Up for unauthenticated users", async ({
+    page,
+  }) => {
+    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /sign up/i })).toBeVisible();
+  });
 });
 
 test.describe("Listing detail page", () => {
@@ -64,5 +76,31 @@ test.describe("Listing detail page", () => {
     // Next.js renders a 404 page — any of these are acceptable signals
     const body = page.locator("body");
     await expect(body).toContainText(/not found|404/i);
+  });
+});
+
+test.describe("Auth pages", () => {
+  test("login page renders the sign-in form", async ({ page }) => {
+    await page.goto("/auth/login");
+    await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
+    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
+  });
+
+  test("signup page renders the create account form", async ({ page }) => {
+    await page.goto("/auth/signup");
+    await expect(page.getByRole("heading", { name: /create account/i })).toBeVisible();
+    await expect(page.getByLabel(/full name/i)).toBeVisible();
+    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.getByLabel(/password/i)).toBeVisible();
+  });
+
+  test("login page links to signup and vice versa", async ({ page }) => {
+    await page.goto("/auth/login");
+    await expect(page.getByRole("link", { name: /sign up/i })).toBeVisible();
+
+    await page.goto("/auth/signup");
+    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
   });
 });
