@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import React from "react";
 import { vi } from "vitest";
 
 // Mock next/navigation for components that use useRouter / useSearchParams
@@ -21,7 +22,6 @@ vi.mock("next/font/google", () => ({
 
 // Mock next/link — renders a plain <a> tag
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) => (
-    <a href={href} {...props}>{children}</a>
-  ),
+  default: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) =>
+    React.createElement("a", { href, ...props }, children),
 }));
